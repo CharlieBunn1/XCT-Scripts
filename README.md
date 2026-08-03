@@ -1,6 +1,6 @@
 # XCT-Scripts
 
-Python scripts for post-processing X-ray Computed Tomography (XCT) data, developed for use with Nikon CT systems. Covers the full pipeline from raw reconstructed slices through to a trained ML segmentation model.
+Python scripts for post-processing X-ray Computed Tomography (XCT) data, developed for use with Nikon CT systems. Covers the full pipeline from raw reconstructed slices through to a trained ML segmentation model and 3D visualization.
 
 ---
 
@@ -28,6 +28,9 @@ Small diagnostic notebook for label mask tif files. Label values (0/1/2) look bl
 #### `xct_unet_training.ipynb`
 Trains a U-Net (`segmentation_models`, Keras/TensorFlow backend, ResNet34 encoder) on the hand-corrected ground-truth slices from `xct_membrane_segmentation.ipynb`, using random augmented patches given how few labelled slices there typically are early on. Runs tiled sliding-window inference over the remaining unlabelled samples and saves predictions for use back in the annotation notebook. Designed to be re-run periodically as the ground-truth set grows.
 
+#### `xct_3d_viewer.ipynb`
+Loads a downsampled version of `full_stack_masks/` (written by `xct_unet_training.ipynb`) — and optionally the raw stack alongside it — into napari's 3D view for a quick interactive look at the segmented volume. The full stack is roughly 16GB for the label volume alone, so this subsamples in z and xy to something that renders live; also supports isolating a single phase (e.g. membrane) as its own toggleable layer. Not a publication-quality renderer — for polished isosurface renders, PyVista is the suggested next step.
+
 ---
 
 ## Requirements
@@ -42,6 +45,8 @@ Trains a U-Net (`segmentation_models`, Keras/TensorFlow backend, ResNet34 encode
 **U-Net training** (`xct_unet_training`): `tensorflow<2.16`, `numpy<2.0`, `segmentation-models`, `albumentations`, `scikit-learn`.
 - `segmentation_models` hasn't been updated for Keras 3 / TensorFlow >=2.16 — pin both `tensorflow` and `numpy` together, or imports fail with a NumPy/TensorFlow ABI mismatch (`numpy.dtype size changed...`).
 - For GPU: install with `pip install "tensorflow[and-cuda]<2.16"` — a plain `pip install tensorflow` on Linux won't discover your GPU even with drivers correctly installed, since the CUDA/cuDNN runtime libraries need to come from the `[and-cuda]` extra.
+
+**3D viewing** (`xct_3d_viewer`): `numpy`, `tifffile`, `tqdm`, plus `napari` and a Qt binding (e.g. `pip install PyQt5`) — same napari/Qt setup as the correction step above.
 
 Install dependencies with:
 ```
@@ -60,6 +65,7 @@ Typical pipeline order:
 3. **Sample, auto-segment, and hand-correct ground truth** (`xct_membrane_segmentation.ipynb`) — use `inspect_mask_values.ipynb` if a mask ever looks suspiciously empty.
 4. **Train a U-Net** on the corrected ground truth and predict the rest (`xct_unet_training.ipynb`).
 5. **Feed U-Net predictions back** into `xct_membrane_segmentation.ipynb` to lightly correct them and grow the ground-truth set, then periodically retrain as it grows.
+6. **Preview the segmented volume in 3D** (`xct_3d_viewer.ipynb`) once `xct_unet_training.ipynb` has written enough of `full_stack_masks/` to be worth looking at — safe to run at any point after that, even mid-way through a full-stack run.
 
 For each notebook: open in Jupyter, edit the `CONFIG`/paths cell at the top, run all cells.
 
@@ -69,7 +75,7 @@ For each notebook: open in Jupyter, edit the `CONFIG`/paths cell at the top, run
 
 - Raw scan data, reconstructions, and TIFF files are excluded from this repository via `.gitignore`
 - Developed for scans acquired on a Nikon Reflection 225 system
-- `xct_membrane_segmentation.ipynb`, `inspect_mask_values.ipynb`, and `xct_unet_training.ipynb` all expect to share the same `output_dir` (`images/`, `masks_corrected/`, `masks_unet/`, `sample_manifest.csv`) so they can read each other's outputs — point all three at the same folder.
+- `xct_membrane_segmentation.ipynb`, `inspect_mask_values.ipynb`, `xct_unet_training.ipynb`, and `xct_3d_viewer.ipynb` all expect to share the same `output_dir` (`images/`, `masks_corrected/`, `masks_unet/`, `full_stack_masks/`, `sample_manifest.csv`) so they can read each other's outputs — point all four at the same folder.
 
 ---
 

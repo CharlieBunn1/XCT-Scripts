@@ -31,6 +31,9 @@ Trains a U-Net (`segmentation_models`, Keras/TensorFlow backend, ResNet34 encode
 #### `xct_3d_viewer.ipynb`
 Loads a downsampled version of `full_stack_masks/` (written by `xct_unet_training.ipynb`) — and optionally the raw stack alongside it — into napari's 3D view for a quick interactive look at the segmented volume. The full stack is roughly 16GB for the label volume alone, so this subsamples in z and xy to something that renders live; also supports isolating a single phase (e.g. membrane) as its own toggleable layer. Not a publication-quality renderer — for polished isosurface renders, PyVista is the suggested next step.
 
+#### `model_evaluation_benchmark.ipynb`
+Calculates statistical evaluation of the model and compares against standard otsu thresholding. Includes: compute summary, confusion matrices, per class iou bar chart and metrics, per class you box plot and metrics, qualitative comparisons of Raw, Ground Truth, Otsu, and Model, statistical comparison and throughput. 
+
 ---
 
 ## Requirements
